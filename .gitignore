@@ -1,3 +1,7 @@
 cenus_data/*.csv
 cenus_data/
 census_data/
+original_data/
+__pycache__/
+clean_data/
+txt_files/
