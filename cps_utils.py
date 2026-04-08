@@ -201,6 +201,40 @@ def compare_columns(
     summary = pd.DataFrame(rows).set_index("File")
     print("\n" + summary.to_string())
 
+# ---------------------------------------------------------------------------
+# 6. Compare column names across files vs. a main DataFrame
+# ---------------------------------------------------------------------------
+def filter_rows_by_negative_one_pct(
+        df,
+        threshold=0.2,
+          missing_value=-1,
+            inplace=False):
+    """
+    Filter rows where a certain percentage of columns have a specific missing value.
+    Args:
+        df: DataFrame to filter.
+        threshold: Fraction of columns with missing_value to mark row as bad.
+        missing_value: The value considered as missing (e.g., -1).
+        inplace: If True, drop bad rows from df. If False, return a new filtered DataFrame.
+    Returns:
+            If inplace=True, returns None (modifies df in place). If inplace=False, returns a new DataFrame with bad rows removed.
+        """
+    # threshold: fraction of cols with missing_value to mark row as bad
+    # e.g. 0.5 means ">= 50% of columns are -1"
+    bad = (df == missing_value).sum(axis=1) / df.shape[1] >= threshold
+    bad = (df < 0).sum(axis=1) / df.shape[1] >= threshold
+    n_bad = int(bad.sum())
+    n_total = len(df)
+    #print(f"{n_bad} rows out of {n_total} have >= {threshold*100:.1f}% of columns == {missing_value}")
+    if inplace:
+        df.drop(index=df[bad].index, inplace=True)
+        #print(f"dropped {n_bad} rows, remaining {len(df)} rows")
+        return df
+    df_clean = df.loc[~bad].reset_index(drop=True)
+    #print(f"returning cleaned df with {len(df_clean)} rows")
+    return df_clean
+
+
 
 # ---------------------------------------------------------------------------
 # Example usage
@@ -232,3 +266,4 @@ if __name__ == "__main__":
 
     # Step 5: compare
     compare_columns(main_df, other_dfs, verbose=True)
+
