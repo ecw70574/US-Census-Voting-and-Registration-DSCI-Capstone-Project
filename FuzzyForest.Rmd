@@ -1,0 +1,214 @@
+---
+title: "FuzzyForest"
+author: "Aidan Murray"
+date: "2026-04-15"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#install.packages("BiocManager")
+#options(timeout = 600)  # give it 10 minutes
+#BiocManager::install("GO.db", ask = FALSE)
+suppressMessages(library(dplyr))
+suppressMessages(library(tidyverse))
+suppressMessages(library(fuzzyforest))
+#suppressMessages(library(WGCNA))
+library(randomForest)
+```
+
+
+
+```{r}
+data2024 = read_csv("clean_data/nov24pub_clean.csv")
+data2022 = read_csv("clean_data/nov22pub_clean.csv")
+data2020 = read_csv("clean_data/nov20pub_clean.csv")
+data2018 = read_csv("clean_data/nov18pub_clean.csv")
+data2016 = read_csv("clean_data/nov16pub_clean.csv")
+data2014 = read_csv("clean_data/nov14pub_clean.csv")
+data2012 = read_csv("clean_data/nov12pub_clean.csv")
+data2010 = read_csv("clean_data/nov10pub_clean.csv")
+
+data = bind_rows(data2024, data2022, data2020, data2020, data2018, data2016, data2014, data2012, data2010)
+data
+```
+```{r}
+y = as.factor(data$PES1)
+X <- data[, !names(data) %in% c("PES1", "PES2")]
+
+set.seed(42)
+sample_idx <- sample(nrow(X), 10000)  # 10k rows is plenty for variable selection
+X <- X[sample_idx, ]
+y <- y[sample_idx]
+
+# These are CPS admin columns, not predictors
+drop_cols <- c("HRHHID", "HRMONTH", "HRYEAR4", "HURESPLI", "HUFINAL", "FILLER")
+X <- X[, !names(X) %in% drop_cols]
+
+pes_cols <- grep("^PES", names(X), value = TRUE)
+X <- X[, !names(X) %in% pes_cols]
+
+weight_cols <- grep("^PW|^HW", names(X), value = TRUE)
+X <- X[, !names(X) %in% weight_cols]
+X <- X[, !names(X) %in% c("HRHHID2")]
+
+cat("Working with:", nrow(X), "rows,", ncol(X), "cols\n")
+
+# Remove columns that are constant OR all NA
+zero_var <- apply(X, 2, sd, na.rm = TRUE)
+bad_cols <- is.na(zero_var) | zero_var == 0
+cat("Removing", sum(bad_cols), "zero-variance or all-NA columns the bad columns are: ", bad_cols,"\n")
+X <- X[, !bad_cols]
+
+# Also good practice: remove near-zero variance
+low_var <- apply(X, 2, var, na.rm = TRUE) < 1e-10
+X <- X[, !low_var]
+
+X <- as.data.frame(lapply(X, function(col) {
+  col[is.na(col)] <- -1  # -1 = "not asked / not applicable"
+  col
+}))
+```
+```{r}
+# ── 1. Build modules (same as before) ──────────────────────────────────────
+cor_mat <- cor(X, use = "pairwise.complete.obs")
+
+# Check for any NaN left
+any(is.nan(cor_mat))  # should be FALSE
+
+# If still TRUE, find and drop the offending columns
+bad_cols <- apply(cor_mat, 2, function(x) any(is.nan(x)))
+cat("Dropping", sum(bad_cols), "columns with NaN correlations\n")
+X <- X[, !bad_cols]
+
+# Recompute and cluster
+cor_mat <- cor(X, use = "pairwise.complete.obs")
+
+# Find which columns produce NaN correlations
+nan_cols <- apply(cor_mat, 2, function(x) any(is.nan(x)))
+cat("Columns with NaN correlations:", sum(nan_cols), "\n")
+cat(names(nan_cols[nan_cols]), "\n")  # see which ones
+
+# Drop them
+X <- X[, !nan_cols]
+
+# Recompute
+# Keep only columns that have no NaN in their entire correlation row/col
+cor_mat <- cor(X, use = "pairwise.complete.obs")
+keep <- apply(cor_mat, 2, function(x) all(!is.nan(x)) && all(!is.na(x)))
+X <- X[, keep]
+
+cor_mat <- cor(X, use = "pairwise.complete.obs")
+dist_mat <- as.dist(1 - abs(cor_mat))
+hc <- hclust(dist_mat, method = "average")
+module_membership <- cutree(hc, k = 5)
+
+# Confirm it exists
+table(module_membership)
+
+# Plot the dendrogram to see where natural breaks are
+plot(hc, labels = FALSE, hang = -1)
+abline(h = 0.5, col = "red")  # visualize where h cuts
+```
+```{r}
+module_membership <- cutree(hc, h = 0.3)
+cat("Number of modules:", length(unique(module_membership)), "\n")
+table(module_membership)
+```
+
+```{r}
+# ── 2. Screen within each module ───────────────────────────────────────────
+keep_fraction <- 0.25  # keep top 25% of vars from each module
+survivors <- c()
+
+for (mod in unique(module_membership)) {
+  mod_vars <- names(module_membership[module_membership == mod])
+  
+  # need at least 2 vars to run a forest
+  if (length(mod_vars) < 2) {
+    survivors <- c(survivors, mod_vars)
+    next
+  }
+  
+  X_mod <- X[, mod_vars, drop = FALSE]
+  
+  rf_mod <- randomForest(
+    x = X_mod,
+    y = y,
+    ntree = 500,
+    importance = TRUE
+  )
+  
+  imp <- importance(rf_mod, type = 1)  # mean decrease accuracy
+  imp_sorted <- sort(imp[, 1], decreasing = TRUE)
+  
+  n_keep <- max(1, ceiling(length(mod_vars) * keep_fraction))
+  survivors <- c(survivors, names(imp_sorted)[1:n_keep])
+}
+
+cat("Survivors after screening:", length(survivors), "\n")
+
+# ── 3. Final forest on survivors ───────────────────────────────────────────
+X_survivors <- X[, survivors, drop = FALSE]
+
+set.seed(42)
+rf_final <- randomForest(
+  x = X_survivors,
+  y = y,
+  ntree = 1000,
+  importance = TRUE
+)
+
+# ── 4. Rank final variable importance ──────────────────────────────────────
+final_imp <- importance(rf_final, type = 1)
+final_imp_sorted <- sort(final_imp[, 1], decreasing = TRUE)
+top_vars <- names(final_imp_sorted)[1:25]  # top 25
+
+print(final_imp_sorted[1:25])
+
+```
+```{r}
+# ── 5. Plot ────────────────────────────────────────────────────────────────
+library(ggplot2)
+
+imp_df <- data.frame(
+  variable   = names(final_imp_sorted[1:25]),
+  importance = final_imp_sorted[1:25]
+)
+
+ggplot(imp_df, aes(x = reorder(variable, importance), y = importance)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs(title = "Fuzzy Forest Variable Importance",
+       x = NULL, y = "Mean Decrease Accuracy") +
+  theme_minimal()
+```
+
+
+```{r}
+imp_df
+# PEEDUCA: HIGHEST LEVEL OF SCHOOL COMPLETED OR DEGREE RECEIVED
+# PRTAGE: AGE (up to 85)
+# HEFAMINC: Family Income
+# PRS8: How long (have you/has name) lived at this address?
+# PRNLFSCH: NLF ACTIVITY - IN SCHOOL OR NOT IN SCHOOL
+# HETENURE: ARE YOUR LIVING QUARTERS... (bought, rent, squat)
+# PRMARSTA: MARITAL STATUS BASED ON ARMED FORCES PARTICIPATION
+# PERRP: RELATIONSHIP TO REFERENCE PERSON
+# PEIO1ICD: INDUSTRY CODE FOR PRIMARY JOB
+# GEDIV: DIVISION of the USA
+# PEDIPGED: How did...get...'s high school diploma?
+# PULINENO: PERSON'S LINE NUMBER
+# PRDTOCC1: DETAILED OCCUPATION RECODE - JOB 1
+# HRHTYPE: Household type
+# PUIO1MFG: IS THIS BUSINESS OR ORGANIZATION MAINLY MANUFACTURING, RETAIL TRADE, WHOLESALE TRADE, OR SOMETHING ELSE?
+# HRNUMHOU: TOTAL NUMBER OF PERSONS LIVING IN THE HOUSE
+# PRFAMREL: FAMILY RELATIONSHIP RECODE
+# PEHRACTT: WHAT IS THE MAIN REASON YOU WORKED LESS THAN 35 HOURS LAST WEEK
+
+```
+
+

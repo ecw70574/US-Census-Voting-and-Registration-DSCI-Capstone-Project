@@ -5,3 +5,6 @@ original_data/
 __pycache__/
 clean_data/
 txt_files/
+.RData
+.Rhistory
+clean_data copy.zip
