@@ -31,12 +31,11 @@ def parse_cps_layout(txt_path: str) -> list[dict]:
         List of column dicts with keys: name, size, start, end.
     """
     pattern = re.compile(
-        r'^([A-Z][A-Z0-9]{1,9})\s+(\d+)\s+.+?(\d+)\s*[-–—]\s*(\d+)\s*$',
+        r'^([A-Z][A-Z0-9]{1,9})\s+(\d+)\s+.+?(\d+)\s*[-–—‒−]\s*(\d+)\s*$',
         re.MULTILINE
     )
-    
     with open(txt_path) as f:
-        text = f.read()
+        text = f.read().replace('\x0c', '')  # strip form feed / page break chars
 
     cols = []
     for name, size, start, end in pattern.findall(text):

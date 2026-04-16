@@ -63,6 +63,20 @@ for fname, df in all_dfs.items():
         df = df.rename(columns={'PES8': 'PRS8'})
         print(f"Renamed PES8 -> PRS8 in {fname}")
 
+    if 'PEAGE' in df.columns and 'PRTAGE' not in df.columns:
+        df = df.rename(columns={'PEAGE': 'PRTAGE'})
+        print(f"Renamed PEAGE -> PRTAGE in {fname}")
+    
+    if 'GEDIV' in df.columns:
+        print("GEDIV column already exists.")
+    else:
+        print("GEDIV not found — deriving from GESTCEN.")
+        df['GEDIV'] = df['GESTCEN'] // 10
+
+    if 'PEEDUCA' not in df.columns:
+        print("PEEDUCA not in columns — extracting from fixed-width positions 137-138.")
+        df['PEEDUCA'] = df['_raw'].str[136:138].str.strip().astype(float)
+
     matching_columns = len(set(data2024.columns) & set(df.columns))
     print(f"Number of matching columns: {matching_columns}")
     only_in_data = set(data2024.columns) - set(df.columns)
