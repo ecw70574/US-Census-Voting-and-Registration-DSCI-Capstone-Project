@@ -1,7 +1,5 @@
 import pandas as pd
 import numpy as np
-import glob
-import os
 import re
 import glob
 import os
@@ -31,6 +29,7 @@ def clean_and_aggregate(file_path, year):
         'PRDTOCC1': "job_industry_code",
         "GEDIV": "geo_region",
         "PEDIPGED": "GED_or_HS",
+        "GESTFIPS": "states",
         "PES1": "did_vote"
     })
 
@@ -42,11 +41,107 @@ def clean_and_aggregate(file_path, year):
         "age","sex","marital_status","education","family_income",
         "race","hispanic_flag","weight","time_at_curr_address",
         "curr_student","lease_type","job_industry_code","geo_region",
-        "GED_or_HS","did_vote"
+        "GED_or_HS", "states", "did_vote"
     ]].copy()
 
 
     ##### Feature engineering
+
+    # state code mapping 
+    state_codes = {
+        "AK": '02',
+        "AL": "01",
+        "AR": "05",
+        "AZ": "04",
+        "CA": "06",
+        "CO": "08",
+        "CT": "09",
+        "DE": "10",
+        "FL": "12",
+        "GA": "13",
+        "HI": "15",
+        "IA": "19",
+        "ID": "16",
+        "IL": "17",
+        "IN": "18",
+        "KS": "20",
+        "KY": "21",
+        "LA": "22",
+        "MA": "25",
+        "MD": "24",
+        "ME": "23",
+        "MI": "26",
+        "MN": "27",
+        "MO": "29",
+        "MS": "28",
+        "MT": "30",
+        "NC": "37",
+        "ND": "38",
+        "NE": "31",
+        "NH": "33",
+        "NJ": "34",
+        "NM": "35",
+        "NV": "32",
+        "NY": "36",
+        "OH": "39",
+        "OK": "40",
+        "OR": "41",
+        "PA": "42",
+        "RI": "44",
+        "SC": "45",
+        "SD": "46",
+        "TN": "47",
+        "TX": "48",
+        "UT": "49",
+        "VA": "51",
+        "VT": "50",
+        "WA": "53",
+        "WI": "55",
+        "WV": "54",
+        "WY": "56"
+    }
+
+    state_region = {
+        # 1: New England
+        "CT": 1, "ME": 1, "MA": 1, "NH": 1, "RI": 1, "VT": 1,
+
+        # 2: Middle Atlantic
+        "NJ": 2, "NY": 2, "PA": 2,
+
+        # 3: East North Central
+        "IL": 3, "IN": 3, "MI": 3, "OH": 3, "WI": 3,
+
+        # 4: West North Central
+        "IA": 4, "KS": 4, "MN": 4, "MO": 4, "NE": 4, "ND": 4, "SD": 4,
+
+        # 5: South Atlantic
+        "DE": 5, "FL": 5, "GA": 5, "MD": 5, "NC": 5, "SC": 5, "VA": 5, "WV": 5,
+
+        # 6: East South Central
+        "AL": 6, "KY": 6, "MS": 6, "TN": 6,
+
+        # 7: West South Central
+        "AR": 7, "LA": 7, "OK": 7, "TX": 7,
+
+        # 8: Mountain
+        "AZ": 8, "CO": 8, "ID": 8, "MT": 8, "NV": 8, "NM": 8, "UT": 8, "WY": 8,
+
+        # 9: Pacific
+        "AK": 9, "CA": 9, "HI": 9, "OR": 9, "WA": 9
+    }
+
+    # only applying the state imputation for 2014
+    if year == 14:
+        # drop the region
+        data_subset = data_subset.drop(columns=["geo_region"])
+        state_fips_rev = {v: k for k, v in state_codes.items()}
+        data_subset["state_coded"] = data_subset["states"].astype(str).str.zfill(2)
+        data_subset["states_encoded"] = data_subset["state_coded"].map(state_fips_rev)
+        # imputing the region based on the state code
+        data_subset["geo_region"] = data_subset["states_encoded"].map(state_region)
+        data_subset["geo_region"] = data_subset["geo_region"].astype("Int64")
+        # dropping everything else that we dont need 
+        data_subset = data_subset.drop(columns=["states", "state_coded", "states_encoded"])
 
     # age bins
     bins = [18, 25, 35, 45, 55, 65, 100]
