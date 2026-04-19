@@ -1,12 +1,13 @@
 import pandas as pd
 import numpy as np
-from tensorflow.keras.preprocessing.sequence import pad_sequences
+# NOTE: install keras to your environment
+from keras.preprocessing.sequence import pad_sequences 
 # revised methodology: avoids leakage from same group over time
 
 # 1. load data
 # reading in resulting CSV from aggregate_and_build.py script 
 # data = pd.read_csv("lstm_preprocessed_data.csv")
-data = pd.read_csv("all_years_aggregated.csv")
+data = pd.read_csv("processed/all_years_aggregated.csv")
 
 # 2. group id
 data["group_id"] = (
@@ -35,6 +36,11 @@ model_data = model_data.sort_values(["group_id", "year"])
 # 5. fill missing
 model_data = model_data.fillna(0)
 
+# remove columns we already grouped on - don't need them as features! - redundant
+# also werent properly encoded so were causing typecast errors 
+model_data = model_data.drop(columns=["age_group", "education_grouped","family_income_grouped"])
+
+
 # 6. features
 # everything except the group id, year, and target variable 
 feature_cols = [
@@ -42,6 +48,33 @@ feature_cols = [
     if c not in ["group_id", "year", "did_vote_1"]
 ]
 
+# 7. buidling sequences for each group
+# need to filter for years then build sequences after
+train_years = 2018
+val_years   = 2022
+test_years  = 2024
+def build_sequences(df, max_year):
+    X_seq, y_seq = [], []
+
+    for gid, g in df.groupby("group_id"):
+        g = g.sort_values("year")
+
+        g = g[g["year"] <= max_year]   # filter to find rows in corrct year
+
+        if len(g) < 2: 
+            continue
+
+        X_seq.append(g[feature_cols].values) # only rows with correct year added to sequence
+        y_seq.append(g["did_vote_1"].values) # only rows with coreect year added to sequence
+
+    return np.array(X_seq, dtype=np.float32), np.array(y_seq, dtype=np.float32)
+
+
+X_train, y_train = build_sequences(model_data, 2018)
+X_val, y_val     = build_sequences(model_data, 2022)
+X_test, y_test   = build_sequences(model_data, 2024)
+
+'''
 # 7. buidling sequences for each group
 X_seq, y_seq = [], []
 
@@ -89,3 +122,4 @@ X_test, y_test   = X[test_idx], y[test_idx]
 # val_data   = model_data[(model_data["year"] > 18) & (model_data["year"] <= 22)] # for tuning/selection
 # after final model has been tuned/optimized, avoid data leakage
 # test_data  = model_data[model_data["year"] == 24] # for testing performance on unseen observations 
+'''
