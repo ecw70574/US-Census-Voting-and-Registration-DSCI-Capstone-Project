@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from tensorflow.keras.preprocessing.sequence import pad_sequences
+# revised methodology: avoids leakage from same group over time
 
 # 1. load data
 # reading in resulting CSV from aggregate_and_build.py script 
@@ -60,11 +61,31 @@ for gid, g in model_data.groupby("group_id"):
 X = np.array(X_seq)
 y = np.array(y_seq)
 
+# map from group to index 
+group_ids = list(model_data["group_id"].unique())
+group_to_idx = {g:i for i, g in enumerate(group_ids)}
+
+# split sequences by group identity
+# not by rows
+train_groups = model_data[model_data["year"] <= 2018]["group_id"].unique()
+val_groups   = model_data[(model_data["year"] > 2018) & (model_data["year"] <= 2022)]["group_id"].unique()
+test_groups  = model_data[model_data["year"] == 2024]["group_id"].unique()
+
+# group IDs to indices
+train_idx = [group_to_idx[g] for g in train_groups if g in group_to_idx]
+val_idx   = [group_to_idx[g] for g in val_groups if g in group_to_idx]
+test_idx  = [group_to_idx[g] for g in test_groups if g in group_to_idx]
+
+# slice sequence arrays 
+# avoid temporal data leakage 
+X_train, y_train = X[train_idx], y[train_idx]
+X_val, y_val     = X[val_idx], y[val_idx]
+X_test, y_test   = X[test_idx], y[test_idx]
 
 # split into training and testing 
 
 # train on years <- 2018, validate on 2020-2022, test on 2024
-train_data = model_data[model_data["year"] <= 18] # for training
-val_data   = model_data[(model_data["year"] > 18) & (model_data["year"] <= 22)] # for tuning/selection
+# train_data = model_data[model_data["year"] <= 18] # for training
+# val_data   = model_data[(model_data["year"] > 18) & (model_data["year"] <= 22)] # for tuning/selection
 # after final model has been tuned/optimized, avoid data leakage
-test_data  = model_data[model_data["year"] == 24] # for testing performance on unseen observations 
+# test_data  = model_data[model_data["year"] == 24] # for testing performance on unseen observations 
