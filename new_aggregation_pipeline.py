@@ -14,21 +14,21 @@ def load_state_level_data():
 
     data = [
         # ---------------- 2012 ----------------
-        {"year": 2012, "election_type": "presidential", "office": "President",
+        {"year": 12, "election_type": "presidential", "office": "President",
         "candidate_name": "Barack Obama", "party": "Democrat",
         "birthplace_state": "HI",
         "age_at_election": 51, "incumbent": 1, "approval_rating_pct": 52,
         "gdp_growth_pct": 2.3, "inflation_pct": 2.1, "unemployment_pct": 8.1,
         "popular_vote_pct": 51.1, "electoral_votes": 332},
 
-        {"year": 2012, "election_type": "presidential", "office": "President",
+        {"year": 12, "election_type": "presidential", "office": "President",
         "candidate_name": "Mitt Romney", "party": "Republican",
         "birthplace_state": "MI",
         "age_at_election": 65, "incumbent": 0, "approval_rating_pct": None,
         "gdp_growth_pct": 2.3, "inflation_pct": 2.1, "unemployment_pct": 8.1,
         "popular_vote_pct": 47.2, "electoral_votes": 206},
 
-        {"year": 2012, "election_type": "presidential", "office": "President",
+        {"year": 12, "election_type": "presidential", "office": "President",
         "candidate_name": "Gary Johnson", "party": "Libertarian",
         "birthplace_state": "ND",
         "age_at_election": 59, "incumbent": 0, "approval_rating_pct": None,
@@ -36,21 +36,21 @@ def load_state_level_data():
         "popular_vote_pct": 1.0, "electoral_votes": 0},
 
         # ---------------- 2016 ----------------
-        {"year": 2016, "election_type": "presidential", "office": "President",
+        {"year": 16, "election_type": "presidential", "office": "President",
         "candidate_name": "Hillary Clinton", "party": "Democrat",
         "birthplace_state": "IL",
         "age_at_election": 69, "incumbent": 0, "approval_rating_pct": None,
         "gdp_growth_pct": 1.8, "inflation_pct": 1.3, "unemployment_pct": 4.9,
         "popular_vote_pct": 48.2, "electoral_votes": 227},
 
-        {"year": 2016, "election_type": "presidential", "office": "President",
+        {"year": 16, "election_type": "presidential", "office": "President",
         "candidate_name": "Donald Trump", "party": "Republican",
         "birthplace_state": "NY",
         "age_at_election": 70, "incumbent": 0, "approval_rating_pct": None,
         "gdp_growth_pct": 1.8, "inflation_pct": 1.3, "unemployment_pct": 4.9,
         "popular_vote_pct": 46.1, "electoral_votes": 304},
 
-        {"year": 2016, "election_type": "presidential", "office": "President",
+        {"year": 16, "election_type": "presidential", "office": "President",
         "candidate_name": "Gary Johnson", "party": "Libertarian",
         "birthplace_state": "ND",
         "age_at_election": 63, "incumbent": 0, "approval_rating_pct": None,
@@ -58,21 +58,21 @@ def load_state_level_data():
         "popular_vote_pct": 3.3, "electoral_votes": 0},
 
         # ---------------- 2020 ----------------
-        {"year": 2020, "election_type": "presidential", "office": "President",
+        {"year": 20, "election_type": "presidential", "office": "President",
         "candidate_name": "Joe Biden", "party": "Democrat",
         "birthplace_state": "PA",
         "age_at_election": 78, "incumbent": 0, "approval_rating_pct": 56,
         "gdp_growth_pct": -2.2, "inflation_pct": 1.2, "unemployment_pct": 8.1,
         "popular_vote_pct": 51.3, "electoral_votes": 306},
 
-        {"year": 2020, "election_type": "presidential", "office": "President",
+        {"year": 20, "election_type": "presidential", "office": "President",
         "candidate_name": "Donald Trump", "party": "Republican",
         "birthplace_state": "NY",
         "age_at_election": 74, "incumbent": 1, "approval_rating_pct": 43,
         "gdp_growth_pct": -2.2, "inflation_pct": 1.2, "unemployment_pct": 8.1,
         "popular_vote_pct": 46.8, "electoral_votes": 232},
 
-        {"year": 2020, "election_type": "presidential", "office": "President",
+        {"year": 20, "election_type": "presidential", "office": "President",
         "candidate_name": "Jo Jorgensen", "party": "Libertarian",
         "birthplace_state": "IL",
         "age_at_election": 63, "incumbent": 0, "approval_rating_pct": None,
@@ -80,21 +80,21 @@ def load_state_level_data():
         "popular_vote_pct": 1.2, "electoral_votes": 0},
 
         # ---------------- 2024 ----------------
-        {"year": 2024, "election_type": "presidential", "office": "President",
+        {"year": 24, "election_type": "presidential", "office": "President",
         "candidate_name": "Joe Biden", "party": "Democrat",
         "birthplace_state": "PA",
         "age_at_election": 82, "incumbent": 1, "approval_rating_pct": 41,
         "gdp_growth_pct": 2.5, "inflation_pct": 3.4, "unemployment_pct": 3.9,
         "popular_vote_pct": 51.0, "electoral_votes": 303},
 
-        {"year": 2024, "election_type": "presidential", "office": "President",
+        {"year": 24, "election_type": "presidential", "office": "President",
         "candidate_name": "Donald Trump", "party": "Republican",
         "birthplace_state": "NY",
         "age_at_election": 78, "incumbent": 0, "approval_rating_pct": 45,
         "gdp_growth_pct": 2.5, "inflation_pct": 3.4, "unemployment_pct": 3.9,
         "popular_vote_pct": 47.5, "electoral_votes": 235},
 
-        {"year": 2024, "election_type": "presidential", "office": "President",
+        {"year": 24, "election_type": "presidential", "office": "President",
         "candidate_name": "Chase Oliver", "party": "Libertarian",
         "birthplace_state": "TN",
         "age_at_election": 39, "incumbent": 0, "approval_rating_pct": None,
@@ -103,6 +103,8 @@ def load_state_level_data():
     ]
 
     df = pd.DataFrame(data)
+    
+    #return macro_df, df
     df.to_csv("presidential_dataset_full.csv", index=False)
 
 
@@ -121,9 +123,11 @@ def load_presidential_tables():
     ]].drop_duplicates()
 
     # STATE FLAGS (safe join)
+
     state_flags = pres[["year", "birthplace_state"]].drop_duplicates()
     state_flags["candidate_flag"] = 1
     state_flags = state_flags.rename(columns={"birthplace_state": "states_encoded"})
+    
 
     return macro_df, state_flags
 
@@ -147,6 +151,65 @@ def build_election_series():
     # create lag structure aligned to panel years
     election_lag = election.copy()
 
+    election_lag["year"] = election_lag["election_year"] + 4
+
+    election_lag = election_lag[[
+        "year",
+        "vote_pct",
+        "evotes"
+    ]].rename(columns={
+        "vote_pct": "lag_popular_vote_pct",
+        "evotes": "lag_electoral_votes"
+    })
+
+    return election_lag
+
+def load_presidential_tables2():
+    pres = pd.read_csv("presidential_dataset_full.csv")
+
+    # 1. YEAR-LEVEL MACRO DATA (Flattened)
+    # We take only the macro stats. Since these are identical for all candidates 
+    # in a year, we group by year and take the first (or mean).
+    # NOTE: For approval_rating, we usually want the INCUMBENT'S rating as the macro predictor.
+    macro_df = pres.groupby("year").agg({
+        "gdp_growth_pct": "first",
+        "inflation_pct": "first",
+        "unemployment_pct": "first",
+        "approval_rating_pct": "max" # Takes the incumbent's rating if present
+    }).reset_index()
+
+    # 2. STATE FLAGS (Flattened)
+    # We want to know: "Is ANY candidate from this state this year?" 
+    # This prevents duplicates if two candidates were from the same state.
+    state_flags = pres[["year", "birthplace_state"]].copy()
+    state_flags["candidate_flag"] = 1
+    state_flags = state_flags.rename(columns={"birthplace_state": "states_encoded"})
+    
+    # Flatten to one row per state-year
+    state_flags = state_flags.groupby(["year", "states_encoded"]).max().reset_index()
+
+    return macro_df, state_flags
+
+def build_election_series2():
+    pres = pd.read_csv("presidential_dataset_full.csv")
+
+    # 3. ELECTION SUMMARY (Flattened)
+    # To avoid duplicates, we need one metric per year. 
+    # Usually, we use the WINNER'S stats or the total TWO-PARTY vote.
+    # Here, we'll take the max popular vote and total electoral votes for that year.
+    election = pres.groupby("year").agg({
+        "popular_vote_pct": "max", 
+        "electoral_votes": "sum"
+    }).reset_index()
+
+    election = election.rename(columns={
+        "year": "election_year",
+        "popular_vote_pct": "vote_pct",
+        "electoral_votes": "evotes"
+    })
+
+    # Create lag structure (Shifted 4 years forward)
+    election_lag = election.copy()
     election_lag["year"] = election_lag["election_year"] + 4
 
     election_lag = election_lag[[
@@ -319,8 +382,10 @@ def feature_engineering(df, year):
 def get_last_presidential_year(year):
     return year - (year % 4)  # works for 2010–2024 structure
 
+'''
 def build_panel(df):
 
+    
     panel_keys = [
         "states_encoded",
         "age_group",
@@ -328,9 +393,26 @@ def build_panel(df):
         "education_group",
         "year"
     ]
+    
 
+    panel_keys = [
+        "states_encoded",
+        "sex",
+        "age_group",
+        'race_grouped'
+        "year"
+    ]
+
+    
     feature_cols = [
         "sex","marital_status","race_grouped","hispanic_flag",
+        "curr_student","lease_type","job_industry_code",
+        "GED_or_HS","time_at_curr_address"
+    ]
+    
+
+    feature_cols = [
+        "education_group", "income_group", "marital_status","hispanic_flag",
         "curr_student","lease_type","job_industry_code",
         "GED_or_HS","time_at_curr_address"
     ]
@@ -383,12 +465,72 @@ def build_panel(df):
         panel = panel.drop(columns=["did_vote_0"])
 
     return panel.reset_index()
+'''
+
+def build_panel_new_demographics(df):
+
+    panel_keys = [
+        "states_encoded",
+        "sex",
+        "age_group",
+        "race_grouped",
+        "year"
+    ]
+
+    feature_cols = [
+        "education_group", "income_group", "marital_status","hispanic_flag",
+        "curr_student","lease_type","job_industry_code",
+        "GED_or_HS","time_at_curr_address"
+    ]
+
+    df = df[panel_keys + feature_cols + ["weight", "did_vote"]].copy()
+
+    # one-hot encode
+    dummies = pd.get_dummies(df, columns=feature_cols)
+
+    # numeric conversion
+    dummies = dummies.astype({
+        col: "float64"
+        for col in dummies.columns
+        if col not in panel_keys
+    })
+
+    dummies["weight"] = pd.to_numeric(
+        dummies["weight"], errors="coerce"
+    ).fillna(0)
+
+    # apply weights
+    feature_cols_only = [
+        c for c in dummies.columns
+        if c not in panel_keys + ["weight"]
+    ]
+
+    dummies[feature_cols_only] = dummies[feature_cols_only].multiply(
+        dummies["weight"], axis=0
+    )
+
+    # group
+    panel = dummies.groupby(panel_keys, observed=False).sum()
+
+    # recompute feature columns AFTER aggregation
+    feature_cols_only = [
+        c for c in panel.columns
+        if c != "weight"
+    ]
+
+    # normalize
+    denom = panel["weight"].replace(0, np.nan)
+
+    panel[feature_cols_only] = panel[feature_cols_only].div(denom, axis=0)
+    panel[feature_cols_only] = panel[feature_cols_only].fillna(0)
+
+    return panel.reset_index()
 
 def process_year(file, year, macro_df, state_flags, election_lag):
 
     df = clean_microdata(file, year)
     df = feature_engineering(df, year)
-    panel = build_panel(df)
+    panel = build_panel_new_demographics(df)
 
     # STATE FLAGS (safe join)
     panel = panel.merge(
@@ -418,8 +560,8 @@ def run_pipeline():
 
     load_state_level_data()
 
-    macro_df, state_flags = load_presidential_tables()
-    election_lag = build_election_series()
+    macro_df, state_flags = load_presidential_tables2()
+    election_lag = build_election_series2()
 
     files = glob.glob(os.path.join(DATA_DIR, "nov*pub_clean.csv"))
     files = sorted(files, key=extract_year)

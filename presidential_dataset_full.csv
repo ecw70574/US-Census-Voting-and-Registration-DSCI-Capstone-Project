@@ -1,13 +1,13 @@
 year,election_type,office,candidate_name,party,birthplace_state,age_at_election,incumbent,approval_rating_pct,gdp_growth_pct,inflation_pct,unemployment_pct,popular_vote_pct,electoral_votes
-2012,presidential,President,Barack Obama,Democrat,HI,51,1,52.0,2.3,2.1,8.1,51.1,332
-2012,presidential,President,Mitt Romney,Republican,MI,65,0,,2.3,2.1,8.1,47.2,206
-2012,presidential,President,Gary Johnson,Libertarian,ND,59,0,,2.3,2.1,8.1,1.0,0
-2016,presidential,President,Hillary Clinton,Democrat,IL,69,0,,1.8,1.3,4.9,48.2,227
-2016,presidential,President,Donald Trump,Republican,NY,70,0,,1.8,1.3,4.9,46.1,304
-2016,presidential,President,Gary Johnson,Libertarian,ND,63,0,,1.8,1.3,4.9,3.3,0
-2020,presidential,President,Joe Biden,Democrat,PA,78,0,56.0,-2.2,1.2,8.1,51.3,306
-2020,presidential,President,Donald Trump,Republican,NY,74,1,43.0,-2.2,1.2,8.1,46.8,232
-2020,presidential,President,Jo Jorgensen,Libertarian,IL,63,0,,-2.2,1.2,8.1,1.2,0
-2024,presidential,President,Joe Biden,Democrat,PA,82,1,41.0,2.5,3.4,3.9,51.0,303
-2024,presidential,President,Donald Trump,Republican,NY,78,0,45.0,2.5,3.4,3.9,47.5,235
-2024,presidential,President,Chase Oliver,Libertarian,TN,39,0,,2.5,3.4,3.9,1.3,0
+12,presidential,President,Barack Obama,Democrat,HI,51,1,52.0,2.3,2.1,8.1,51.1,332
+12,presidential,President,Mitt Romney,Republican,MI,65,0,,2.3,2.1,8.1,47.2,206
+12,presidential,President,Gary Johnson,Libertarian,ND,59,0,,2.3,2.1,8.1,1.0,0
+16,presidential,President,Hillary Clinton,Democrat,IL,69,0,,1.8,1.3,4.9,48.2,227
+16,presidential,President,Donald Trump,Republican,NY,70,0,,1.8,1.3,4.9,46.1,304
+16,presidential,President,Gary Johnson,Libertarian,ND,63,0,,1.8,1.3,4.9,3.3,0
+20,presidential,President,Joe Biden,Democrat,PA,78,0,56.0,-2.2,1.2,8.1,51.3,306
+20,presidential,President,Donald Trump,Republican,NY,74,1,43.0,-2.2,1.2,8.1,46.8,232
+20,presidential,President,Jo Jorgensen,Libertarian,IL,63,0,,-2.2,1.2,8.1,1.2,0
+24,presidential,President,Joe Biden,Democrat,PA,82,1,41.0,2.5,3.4,3.9,51.0,303
+24,presidential,President,Donald Trump,Republican,NY,78,0,45.0,2.5,3.4,3.9,47.5,235
+24,presidential,President,Chase Oliver,Libertarian,TN,39,0,,2.5,3.4,3.9,1.3,0

@@ -8,9 +8,14 @@ DATA_DIR = "clean_data/years"
 OUTPUT_DIR = "processed/"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-def load_state_level_data():
+def to_two_digit_year(year):
+    """
+    Converts 4-digit election years to 2-digit format:
+    2012 → 12, 2016 → 16, etc.
+    """
+    return year % 100
 
-    import pandas as pd
+def build_election_tables():
 
     data = [
         # ---------------- 2012 ----------------
@@ -103,69 +108,63 @@ def load_state_level_data():
     ]
 
     df = pd.DataFrame(data)
-    df.to_csv("presidential_dataset_full.csv", index=False)
 
+    # FORCE 2-DIGIT YEAR STANDARD
+    df["year"] = df["year"].apply(to_two_digit_year)
 
-# presidential table 
-pres_fed_level = pd.read_csv("presidential_dataset_full.csv")
+    year_level = df.groupby("year").agg({
+        "gdp_growth_pct": "first",
+        "inflation_pct": "first",
+        "unemployment_pct": "first",
+        "incumbent": "max"
+    }).reset_index()
 
-def clean_and_aggregate(file_path, year):
-
-    data = pd.read_csv(file_path)
-
-    # variables that should be lagged one year to avoid data leakage 
-    fed_variables_to_lag = [
-        'popular_vote_pct', 'electoral_votes'
-    ]
-
-    # state join keys - these variables should be left joined to the state and year 
-    # the join key is the year and the candidate birthplace state - hometown state might have more influence on turnout 
-    # ultimately this should just be turned into a flag to indicate if that state had a candidate or not 
-    candidate_state_cos = ['year', 'candidate_name', 'birthplace_state']
-
-    # candidate info should be left joined to the year level data 
-    year_candidate_cols = ['year', 'candidate_name', 'party', 'age_at_election', 'incumbent']
-
-    # year level demographics 
-    # the general economic conditions of the year 
-    # join on the year variable 
-    year_economic_cols = [
-        'year', 'gdp_growth_pct', 'inflation_pct', 'unemployment_pct', 'approval_rating_pct'
-    ]
-
-    # Rename columns
-    data = data.rename(columns={
-        "PRTAGE": "age", 
-        "PESEX": "sex", 
-        "PEMARITL": "marital_status",
-        "PEEDUCA": "education",
-        "HEFAMINC": "family_income",
-        "PRCHLD": "number_of_children",
-        'PTDTRACE': 'race',
-        'PEHSPNON': 'hispanic_flag',
-        'PWSSWGT': 'weight',
-        'PRS8': 'time_at_curr_address',
-        'PRNLFSCH': 'curr_student', 
-        'HETENURE': 'lease_type',
-        'PRDTOCC1': "job_industry_code",
-        "GEDIV": "geo_region",
-        "PEDIPGED": "GED_or_HS",
-        "GESTFIPS": "states",
-        "PES1": "did_vote",
-        # "GTMETSTA": "metro_status" maybe add this back later 
-    })
-
-    # our target
-    data.loc[data['did_vote'] == 2, 'did_vote'] = 0
-
-    # subset to desired columns
-    data_subset = data[[
-        "age","sex","marital_status","education","family_income",
-        "race","hispanic_flag","weight","time_at_curr_address",
-        "curr_student","lease_type","job_industry_code","geo_region",
-        "GED_or_HS", "states", "did_vote"
+    candidate_level = df[[
+        "year",
+        "candidate_name",
+        "party",
+        "birthplace_state",
+        "age_at_election",
+        "popular_vote_pct",
+        "electoral_votes",
+        "incumbent"
     ]].copy()
 
+    return year_level, candidate_level
+
+def build_lags(candidate_level):
+
+    lag = candidate_level.copy()
+
+    lag["year"] = lag["year"] + 4   # still valid in 2-digit system
+
+    return lag.rename(columns={
+        "popular_vote_pct": "lag_popular_vote_pct",
+        "electoral_votes": "lag_electoral_votes"
+    })[["year", "lag_popular_vote_pct", "lag_electoral_votes"]]
+
+
+def clean_microdata(file_path, year):
+
+    df = pd.read_csv(file_path)
+
+    df = df.rename(columns={
+        "PRTAGE": "age",
+        "PESEX": "sex",
+        "PTDTRACE": "race",
+        "GESTFIPS": "states",
+        "PWSSWGT": "weight"
+    })
+
+    # KEEP YEAR CONSISTENT (2-digit)
+    df["year"] = year
+
+    df["weight"] = df["weight"].astype("float64")
+
+    return df
+
+# previous feature engineering steps 
+def feature_engineering(df, year):
 
     ##### Feature engineering
 
@@ -222,89 +221,32 @@ def clean_and_aggregate(file_path, year):
         "WV": "54",
         "WY": "56"
     }
-
-    state_region = {
-        # 1: New England
-        "CT": 1, "ME": 1, "MA": 1, "NH": 1, "RI": 1, "VT": 1,
-
-        # 2: Middle Atlantic
-        "NJ": 2, "NY": 2, "PA": 2,
-
-        # 3: East North Central
-        "IL": 3, "IN": 3, "MI": 3, "OH": 3, "WI": 3,
-
-        # 4: West North Central
-        "IA": 4, "KS": 4, "MN": 4, "MO": 4, "NE": 4, "ND": 4, "SD": 4,
-
-        # 5: South Atlantic
-        "DE": 5, "FL": 5, "GA": 5, "MD": 5, "NC": 5, "SC": 5, "VA": 5, "WV": 5,
-
-        # 6: East South Central
-        "AL": 6, "KY": 6, "MS": 6, "TN": 6,
-
-        # 7: West South Central
-        "AR": 7, "LA": 7, "OK": 7, "TX": 7,
-
-        # 8: Mountain
-        "AZ": 8, "CO": 8, "ID": 8, "MT": 8, "NV": 8, "NM": 8, "UT": 8, "WY": 8,
-
-        # 9: Pacific
-        "AK": 9, "CA": 9, "HI": 9, "OR": 9, "WA": 9
-    }
-
+    
+    data_subset = df.copy()
     # encoding all of the states
     state_fips_rev = {v: k for k, v in state_codes.items()}
     data_subset["state_coded"] = data_subset["states"].astype(str).str.zfill(2)
     data_subset["states_encoded"] = data_subset["state_coded"].map(state_fips_rev)
 
-    # only applying the state imputation for region for 2014 where region is not available 
-    if year == 14:
-        # drop the region
-        data_subset = data_subset.drop(columns=["geo_region"])
 
-        #state_fips_rev = {v: k for k, v in state_codes.items()}
-        #data_subset["state_coded"] = data_subset["states"].astype(str).str.zfill(2)
-        #data_subset["states_encoded"] = data_subset["state_coded"].map(state_fips_rev)
-
-        # imputing the region based on the state code
-        data_subset["geo_region"] = data_subset["states_encoded"].map(state_region)
-        data_subset["geo_region"] = data_subset["geo_region"].astype("Int64")
-        # dropping everything else that we dont need 
-        data_subset = data_subset.drop(columns=["states", "state_coded", "states_encoded"])
-
-    # age bins
+    # AGE GROUP
     bins = [18, 25, 35, 45, 55, 65, 100]
     labels = ["18-24","25-34","35-44","45-54","55-64","65+"]
 
-    data_subset["age_group"] = pd.cut(
-        data_subset["age"],
-        bins=bins,
-        labels=labels,
-        right=False
-    )
+    data_subset["age_group"] = pd.cut(data_subset["age"], bins=bins, labels=labels, right=False)
     data_subset = data_subset.drop(columns=["age"])
 
-    # Hispanic flag
-    data_subset['hispanic_flag'] = data_subset['hispanic_flag'].replace({
-        1: "Hispanic",
-        2: "Non-Hispanic"
-    })
-
-    # Race grouping
+    # RACE
     race_map = {
-        1: "white_only",
-        2: "black_only",
-        3: "american_indian_only",
-        4: "asian_only",
-        5: "PI_only"
+        1: "white", 2: "black", 3: "american_indian",
+        4: "asian", 5: "pacific_islander"
     }
 
-    data_subset["race_grouped"] = data_subset["race"].map(race_map)
-    data_subset["race_grouped"] = data_subset["race_grouped"].fillna("multiracial")
+    data_subset["race_grouped"] = data_subset["race"].map(race_map).fillna("multiracial")
     data_subset = data_subset.drop(columns=["race"])
 
-    # income grouping
-    data_subset["family_income_grouped"] = np.select(
+    # INCOME
+    data_subset["income_group"] = np.select(
         [
             data_subset["family_income"].between(1,6),
             data_subset["family_income"].between(7,10),
@@ -313,18 +255,14 @@ def clean_and_aggregate(file_path, year):
             data_subset["family_income"] == 16
         ],
         [
-            "low_income",
-            "lower_middle_class",
-            "middle_class",
-            "upper_middle_class",
-            "high_income"
+            "low","lower_middle","middle","upper_middle","high"
         ],
         default="unknown"
     )
     data_subset = data_subset.drop(columns=["family_income"])
 
-    # education grouping
-    data_subset["education_grouped"] = np.select(
+    # EDUCATION
+    data_subset["education_group"] = np.select(
         [
             data_subset["education"].between(31,38),
             data_subset["education"] == 39,
@@ -334,90 +272,88 @@ def clean_and_aggregate(file_path, year):
             data_subset["education"] > 43
         ],
         [
-            "less_than_highschool",
-            "high_school_GED_completed",
-            "some_college",
-            "associates",
-            "bachelors",
-            "masters_and_above"
+            "less_hs","hs_grad","some_college",
+            "associates","bachelors","graduate"
         ],
-        default="unkown"
+        default="unknown"
     )
     data_subset = data_subset.drop(columns=["education"])
 
-    # final feature set
-    data_subset = data_subset[[
-        "time_at_curr_address", "curr_student","lease_type","marital_status",
-        "job_industry_code","GED_or_HS","sex","race_grouped",
-        "geo_region","education_grouped","age_group",
-        "family_income_grouped","weight","did_vote"
+    data_subset = data_subset[[ "states_encoded","age_group","income_group","education_group","year",
+        "sex","marital_status","race_grouped","hispanic_flag",
+        "curr_student","lease_type","job_industry_code",
+        "GED_or_HS","time_at_curr_address",
+        "weight","did_vote"
     ]]
 
-    data_subset["year"] = year
+    return data_subset
 
 
-    ##### Weighted aggregation
+def build_panel(df):
 
-    # now adding the geo region into the feature columns 
-    group_cols = [
-        "time_at_curr_address","curr_student","lease_type","marital_status",
-        "job_industry_code","GED_or_HS","sex","race_grouped","did_vote", 'geo_region'
-    ]
+    panel_keys = ["states", "age_group", "race_grouped", "sex", "year"]
 
-    dummies = pd.get_dummies(data_subset, columns=group_cols)
+    dummies = pd.get_dummies(df)
 
-    for col in dummies.columns:
-        if col.startswith(tuple(group_cols)):
-            dummies[col] = dummies[col] * dummies["weight"]
+    numeric_cols = [c for c in dummies.columns if c not in panel_keys]
 
-    # 
-    grouped = dummies.groupby(
-        ["states","education_grouped","age_group","family_income_grouped","year"]
-    ).sum()
+    dummies[numeric_cols] = dummies[numeric_cols].apply(
+        pd.to_numeric, errors="coerce"
+    ).fillna(0)
 
-    feature_cols = [
-        c for c in grouped.columns
-        if any(c.startswith(p) for p in group_cols)
-    ]
+    dummies["weight"] = pd.to_numeric(dummies["weight"], errors="coerce").fillna(0)
 
-    denom = grouped["weight"].replace(0, np.nan)
-    grouped[feature_cols] = grouped[feature_cols].div(denom, axis=0)
-    grouped[feature_cols] = grouped[feature_cols].fillna(0)
+    dummies[numeric_cols] = dummies[numeric_cols].multiply(
+        dummies["weight"], axis=0
+    )
 
-    if "did_vote_0" in grouped.columns:
-        grouped = grouped.drop(columns=["did_vote_0"])
+    return dummies.groupby(panel_keys, observed=True).sum().reset_index()
 
-    return grouped.reset_index()
+def process_year(file, year, year_level, lagged):
 
-# Run pipeline to run over all years 
-files = glob.glob(os.path.join(DATA_DIR, "nov*pub_clean.csv"))
+    df = clean_microdata(file, year)
+    df = feature_engineering(df)
+
+    panel = build_panel(df)
+
+    panel = panel.merge(year_level, on="year", how="left")
+    panel = panel.merge(lagged, on="year", how="left")
+
+    return panel
+
+import os
+import re
+
+pattern = re.compile(r"nov(\d+)pub_clean")
 
 def extract_year(file):
-    match = re.search(r"nov(\d+)pub_clean", file)
+    name = os.path.basename(file)
+    match = pattern.search(name)
     return int(match.group(1)) if match else -1
 
-files = sorted(files, key=extract_year)
+def run_pipeline():
 
-all_years = []
+    year_level, candidate_level = build_election_tables()
+    lagged = build_lags(candidate_level)
 
-for file in files:
-    year = extract_year(file)
+    files = sorted(glob.glob(os.path.join(DATA_DIR, "nov*pub_clean.csv")))
 
-    print(f"Processing year: {year}")
+    all_panels = []
 
-    yearly_df = clean_and_aggregate(file, year)
+    for file in files:
+        year = extract_year(file)
+        print("Processing", year)
 
-    yearly_path = os.path.join(OUTPUT_DIR, f"aggregated_{year}.csv")
-    yearly_df.to_csv(yearly_path, index=False)
+        panel = process_year(file, year, year_level, lagged)
 
-    all_years.append(yearly_df)
+        '''
+        panel.to_csv(
+            os.path.join(OUTPUT_DIR, f"panel_{year}.csv"),
+            index=False
+        )
+        '''
 
+        all_panels.append(panel)
 
-# Final training dataset with all years combined 
+    return pd.concat(all_panels, ignore_index=True)
 
-final_df = pd.concat(all_years, ignore_index=True)
-
-final_path = os.path.join(OUTPUT_DIR, "all_years_aggregated.csv")
-final_df.to_csv(final_path, index=False)
-
-print("Done. Saved per-year + final dataset.")
