@@ -328,32 +328,54 @@ def build_panel(df):
         "GED_or_HS","time_at_curr_address"
     ]
 
-    # one-hot encode
+    # -----------------------------
+    # ONE-HOT ENCODE FEATURES
+    # -----------------------------
     dummies = pd.get_dummies(df, columns=feature_cols)
 
     # -----------------------------
-    # FORCE DENSE NUMERIC (IMPORTANT FIX)
+    # FORCE NUMERIC TYPES
     # -----------------------------
-    dummies = dummies.astype({col: "float64" for col in dummies.columns if col not in panel_keys})
+    dummies = dummies.astype({
+        col: "float64"
+        for col in dummies.columns
+        if col not in panel_keys
+    })
 
-    # ensure weight is numeric
-    dummies["weight"] = pd.to_numeric(dummies["weight"], errors="coerce").fillna(0).astype("float64")
+    dummies["weight"] = pd.to_numeric(
+        dummies["weight"], errors="coerce"
+    ).fillna(0).astype("float64")
 
     # -----------------------------
-    # APPLY WEIGHT VECTORISED (FAST + SAFE)
+    # APPLY WEIGHTS
     # -----------------------------
-    feature_cols_only = [c for c in dummies.columns if c not in panel_keys + ["weight"]]
+    feature_cols_only = [
+        c for c in dummies.columns
+        if c not in panel_keys + ["weight"]
+    ]
 
     dummies[feature_cols_only] = dummies[feature_cols_only].multiply(
         dummies["weight"], axis=0
     )
 
     # -----------------------------
-    # AGGREGATE
+    # GROUP AND SUM
     # -----------------------------
-    panel = dummies.groupby(panel_keys, observed=False).sum().reset_index()
+    panel = dummies.groupby(panel_keys, observed=False).sum()
 
-    return panel
+    # -----------------------------
+    # NORMALIZE → CONVERT TO PROPORTIONS
+    # -----------------------------
+    denom = panel["weight"].replace(0, np.nan)
+
+    panel[feature_cols_only] = panel[feature_cols_only].div(denom, axis=0)
+    panel[feature_cols_only] = panel[feature_cols_only].fillna(0)
+
+    # optional cleanup: remove redundant baseline column if present
+    if "did_vote_0" in panel.columns:
+        panel = panel.drop(columns=["did_vote_0"])
+
+    return panel.reset_index()
 
 def process_year(file, year, macro_df, state_flags, election_lag):
 
