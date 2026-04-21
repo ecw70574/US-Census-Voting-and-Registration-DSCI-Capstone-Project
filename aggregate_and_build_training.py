@@ -8,9 +8,130 @@ DATA_DIR = "clean_data/years"
 OUTPUT_DIR = "processed/"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
+def load_state_level_data():
+
+    import pandas as pd
+
+    data = [
+        # ---------------- 2012 ----------------
+        {"year": 2012, "election_type": "presidential", "office": "President",
+        "candidate_name": "Barack Obama", "party": "Democrat",
+        "birthplace_state": "HI",
+        "age_at_election": 51, "incumbent": 1, "approval_rating_pct": 52,
+        "gdp_growth_pct": 2.3, "inflation_pct": 2.1, "unemployment_pct": 8.1,
+        "popular_vote_pct": 51.1, "electoral_votes": 332},
+
+        {"year": 2012, "election_type": "presidential", "office": "President",
+        "candidate_name": "Mitt Romney", "party": "Republican",
+        "birthplace_state": "MI",
+        "age_at_election": 65, "incumbent": 0, "approval_rating_pct": None,
+        "gdp_growth_pct": 2.3, "inflation_pct": 2.1, "unemployment_pct": 8.1,
+        "popular_vote_pct": 47.2, "electoral_votes": 206},
+
+        {"year": 2012, "election_type": "presidential", "office": "President",
+        "candidate_name": "Gary Johnson", "party": "Libertarian",
+        "birthplace_state": "ND",
+        "age_at_election": 59, "incumbent": 0, "approval_rating_pct": None,
+        "gdp_growth_pct": 2.3, "inflation_pct": 2.1, "unemployment_pct": 8.1,
+        "popular_vote_pct": 1.0, "electoral_votes": 0},
+
+        # ---------------- 2016 ----------------
+        {"year": 2016, "election_type": "presidential", "office": "President",
+        "candidate_name": "Hillary Clinton", "party": "Democrat",
+        "birthplace_state": "IL",
+        "age_at_election": 69, "incumbent": 0, "approval_rating_pct": None,
+        "gdp_growth_pct": 1.8, "inflation_pct": 1.3, "unemployment_pct": 4.9,
+        "popular_vote_pct": 48.2, "electoral_votes": 227},
+
+        {"year": 2016, "election_type": "presidential", "office": "President",
+        "candidate_name": "Donald Trump", "party": "Republican",
+        "birthplace_state": "NY",
+        "age_at_election": 70, "incumbent": 0, "approval_rating_pct": None,
+        "gdp_growth_pct": 1.8, "inflation_pct": 1.3, "unemployment_pct": 4.9,
+        "popular_vote_pct": 46.1, "electoral_votes": 304},
+
+        {"year": 2016, "election_type": "presidential", "office": "President",
+        "candidate_name": "Gary Johnson", "party": "Libertarian",
+        "birthplace_state": "ND",
+        "age_at_election": 63, "incumbent": 0, "approval_rating_pct": None,
+        "gdp_growth_pct": 1.8, "inflation_pct": 1.3, "unemployment_pct": 4.9,
+        "popular_vote_pct": 3.3, "electoral_votes": 0},
+
+        # ---------------- 2020 ----------------
+        {"year": 2020, "election_type": "presidential", "office": "President",
+        "candidate_name": "Joe Biden", "party": "Democrat",
+        "birthplace_state": "PA",
+        "age_at_election": 78, "incumbent": 0, "approval_rating_pct": 56,
+        "gdp_growth_pct": -2.2, "inflation_pct": 1.2, "unemployment_pct": 8.1,
+        "popular_vote_pct": 51.3, "electoral_votes": 306},
+
+        {"year": 2020, "election_type": "presidential", "office": "President",
+        "candidate_name": "Donald Trump", "party": "Republican",
+        "birthplace_state": "NY",
+        "age_at_election": 74, "incumbent": 1, "approval_rating_pct": 43,
+        "gdp_growth_pct": -2.2, "inflation_pct": 1.2, "unemployment_pct": 8.1,
+        "popular_vote_pct": 46.8, "electoral_votes": 232},
+
+        {"year": 2020, "election_type": "presidential", "office": "President",
+        "candidate_name": "Jo Jorgensen", "party": "Libertarian",
+        "birthplace_state": "IL",
+        "age_at_election": 63, "incumbent": 0, "approval_rating_pct": None,
+        "gdp_growth_pct": -2.2, "inflation_pct": 1.2, "unemployment_pct": 8.1,
+        "popular_vote_pct": 1.2, "electoral_votes": 0},
+
+        # ---------------- 2024 ----------------
+        {"year": 2024, "election_type": "presidential", "office": "President",
+        "candidate_name": "Joe Biden", "party": "Democrat",
+        "birthplace_state": "PA",
+        "age_at_election": 82, "incumbent": 1, "approval_rating_pct": 41,
+        "gdp_growth_pct": 2.5, "inflation_pct": 3.4, "unemployment_pct": 3.9,
+        "popular_vote_pct": 51.0, "electoral_votes": 303},
+
+        {"year": 2024, "election_type": "presidential", "office": "President",
+        "candidate_name": "Donald Trump", "party": "Republican",
+        "birthplace_state": "NY",
+        "age_at_election": 78, "incumbent": 0, "approval_rating_pct": 45,
+        "gdp_growth_pct": 2.5, "inflation_pct": 3.4, "unemployment_pct": 3.9,
+        "popular_vote_pct": 47.5, "electoral_votes": 235},
+
+        {"year": 2024, "election_type": "presidential", "office": "President",
+        "candidate_name": "Chase Oliver", "party": "Libertarian",
+        "birthplace_state": "TN",
+        "age_at_election": 39, "incumbent": 0, "approval_rating_pct": None,
+        "gdp_growth_pct": 2.5, "inflation_pct": 3.4, "unemployment_pct": 3.9,
+        "popular_vote_pct": 1.3, "electoral_votes": 0},
+    ]
+
+    df = pd.DataFrame(data)
+    df.to_csv("presidential_dataset_full.csv", index=False)
+
+
+# presidential table 
+pres_fed_level = pd.read_csv("presidential_dataset_full.csv")
+
 def clean_and_aggregate(file_path, year):
 
     data = pd.read_csv(file_path)
+
+    # variables that should be lagged one year to avoid data leakage 
+    fed_variables_to_lag = [
+        'popular_vote_pct', 'electoral_votes'
+    ]
+
+    # state join keys - these variables should be left joined to the state and year 
+    # the join key is the year and the candidate birthplace state - hometown state might have more influence on turnout 
+    # ultimately this should just be turned into a flag to indicate if that state had a candidate or not 
+    candidate_state_cos = ['year', 'candidate_name', 'birthplace_state']
+
+    # candidate info should be left joined to the year level data 
+    year_candidate_cols = ['year', 'candidate_name', 'party', 'age_at_election', 'incumbent']
+
+    # year level demographics 
+    # the general economic conditions of the year 
+    # join on the year variable 
+    year_economic_cols = [
+        'year', 'gdp_growth_pct', 'inflation_pct', 'unemployment_pct', 'approval_rating_pct'
+    ]
 
     # Rename columns
     data = data.rename(columns={
@@ -30,7 +151,8 @@ def clean_and_aggregate(file_path, year):
         "GEDIV": "geo_region",
         "PEDIPGED": "GED_or_HS",
         "GESTFIPS": "states",
-        "PES1": "did_vote"
+        "PES1": "did_vote",
+        # "GTMETSTA": "metro_status" maybe add this back later 
     })
 
     # our target
@@ -130,13 +252,20 @@ def clean_and_aggregate(file_path, year):
         "AK": 9, "CA": 9, "HI": 9, "OR": 9, "WA": 9
     }
 
-    # only applying the state imputation for 2014
+    # encoding all of the states
+    state_fips_rev = {v: k for k, v in state_codes.items()}
+    data_subset["state_coded"] = data_subset["states"].astype(str).str.zfill(2)
+    data_subset["states_encoded"] = data_subset["state_coded"].map(state_fips_rev)
+
+    # only applying the state imputation for region for 2014 where region is not available 
     if year == 14:
         # drop the region
         data_subset = data_subset.drop(columns=["geo_region"])
-        state_fips_rev = {v: k for k, v in state_codes.items()}
-        data_subset["state_coded"] = data_subset["states"].astype(str).str.zfill(2)
-        data_subset["states_encoded"] = data_subset["state_coded"].map(state_fips_rev)
+
+        #state_fips_rev = {v: k for k, v in state_codes.items()}
+        #data_subset["state_coded"] = data_subset["states"].astype(str).str.zfill(2)
+        #data_subset["states_encoded"] = data_subset["state_coded"].map(state_fips_rev)
+
         # imputing the region based on the state code
         data_subset["geo_region"] = data_subset["states_encoded"].map(state_region)
         data_subset["geo_region"] = data_subset["geo_region"].astype("Int64")
@@ -229,9 +358,10 @@ def clean_and_aggregate(file_path, year):
 
     ##### Weighted aggregation
 
+    # now adding the geo region into the feature columns 
     group_cols = [
         "time_at_curr_address","curr_student","lease_type","marital_status",
-        "job_industry_code","GED_or_HS","sex","race_grouped","did_vote"
+        "job_industry_code","GED_or_HS","sex","race_grouped","did_vote", 'geo_region'
     ]
 
     dummies = pd.get_dummies(data_subset, columns=group_cols)
@@ -240,8 +370,9 @@ def clean_and_aggregate(file_path, year):
         if col.startswith(tuple(group_cols)):
             dummies[col] = dummies[col] * dummies["weight"]
 
+    # 
     grouped = dummies.groupby(
-        ["geo_region","education_grouped","age_group","family_income_grouped","year"]
+        ["states","education_grouped","age_group","family_income_grouped","year"]
     ).sum()
 
     feature_cols = [
@@ -258,11 +389,7 @@ def clean_and_aggregate(file_path, year):
 
     return grouped.reset_index()
 
-
-
 # Run pipeline to run over all years 
-
-
 files = glob.glob(os.path.join(DATA_DIR, "nov*pub_clean.csv"))
 
 def extract_year(file):
