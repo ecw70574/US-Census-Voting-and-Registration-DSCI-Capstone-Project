@@ -307,6 +307,13 @@ def feature_engineering(df, year):
     )
     data_subset = data_subset.drop(columns=["education"])
 
+    data_subset = data_subset[[ "states_encoded","age_group","income_group","education_group","year",
+        "sex","marital_status","race_grouped","hispanic_flag",
+        "curr_student","lease_type","job_industry_code",
+        "GED_or_HS","time_at_curr_address",
+        "weight","did_vote"
+    ]]
+
     return data_subset
 
 def get_last_presidential_year(year):
